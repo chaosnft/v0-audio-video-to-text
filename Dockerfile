@@ -1,9 +1,7 @@
-# Dockerfile (tại root)
-
-# Node 20 + Debian (cho Python install)
+# Dockerfile (đã fix hoàn chỉnh – dùng được trên Render ngay)
 FROM node:20-bookworm
 
-# Install system deps: FFmpeg, Python 3.10+, pip
+# Cài FFmpeg + Python + pip
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     python3 \
@@ -11,28 +9,33 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
-# Install OpenAI Whisper globally via pip with --break-system-packages
+# Cài Whisper (bắt buộc --break-system-packages trên Debian 12+)
 RUN pip3 install --upgrade pip --break-system-packages && \
     pip3 install -U openai-whisper --break-system-packages
 
-# Set working dir
+# Tạo folder app
 WORKDIR /app
 
-# Copy package.json and install Node deps
+# Copy package files
 COPY package*.json ./
-RUN npm ci --production  # Production install (skip dev deps)
 
-# Copy app code
+# Cài TẤT CẢ dependencies (cả devDependencies để build được)
+RUN npm ci
+
+# Copy source code
 COPY . .
 
-# Build Next.js
+# Build Next.js (bắt buộc có devDependencies)
 RUN npm run build
 
-# Expose port (Render defaults 10000, but Next.js 3000)
+# Sau khi build xong thì xóa devDependencies để image nhẹ hơn (tùy chọn nhưng rất tốt)
+RUN npm prune --production
+
+# Env cần thiết
+ENV NODE_ENV=production
+ENV PYTHONIOENCODING=utf-8
+ENV PORT=3000
+
 EXPOSE 3000
 
-# Env for Python UTF-8 (fix Unicode error)
-ENV PYTHONIOENCODING=utf-8
-
-# Start app
 CMD ["npm", "start"]
