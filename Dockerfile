@@ -11,9 +11,9 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
-# Install OpenAI Whisper globally via pip
-RUN pip3 install --upgrade pip && \
-    pip3 install -U openai-whisper
+# Install OpenAI Whisper globally via pip with --break-system-packages
+RUN pip3 install --upgrade pip --break-system-packages && \
+    pip3 install -U openai-whisper --break-system-packages
 
 # Set working dir
 WORKDIR /app
