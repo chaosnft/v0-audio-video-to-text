@@ -1,0 +1,8 @@
+{
+  "build": {
+    "builder": "nixpacks",
+    "config": {
+      "nixPackages": ["ffmpeg", "python311", "python311Packages.pip"]
+    }
+  }
+}

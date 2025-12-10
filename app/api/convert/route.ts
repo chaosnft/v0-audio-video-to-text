@@ -25,32 +25,49 @@ async function convertWithWhisper(filePath: string, formats: string[]): Promise<
   await fs.mkdir(outputDir, { recursive: true })
 
   const outputs: Record<string, string> = {}
+  const baseName = path.parse(filePath).name  // Lấy tên file input không extension
+
+  // Env để force UTF-8 cho Python I/O (fix Unicode error trên Windows)
+  const execOptions = {
+    env: {
+      ...process.env,
+      PYTHONIOENCODING: 'utf-8'
+    }
+  }
 
   try {
-    // Run Whisper conversion
-    const outputPath = path.join(outputDir, "output")
-    const formatFlags = formats.map((fmt) => `--output_format ${fmt}`).join(" ")
+    console.log("[v0] Starting Whisper conversion (single run for all formats, filtering selected)")
 
-    console.log("[v0] Starting Whisper conversion with formats:", formats)
+    // Chạy Whisper một lần duy nhất, KHÔNG có --output_format → generate tất cả: txt, srt, vtt, tsv, json
+    const command = `whisper "${filePath}" --model small --output_dir "${outputDir}" --fp16 False`  // Thêm --language vi cho tiếng Việt (tùy chọn, nhanh hơn)
+    
+    try {
+      const { stdout, stderr } = await execAsync(command, execOptions)
+      if (stderr) {
+        console.warn(`[v0] Whisper stderr:`, stderr.trim())
+      }
+      console.log(`[v0] Whisper stdout:`, stdout.trim())
+    } catch (execError: any) {
+      console.error(`[v0] Whisper exec error:`, execError.message)
+      console.error(`[v0] Whisper stderr:`, execError.stderr?.toString())
+      // Nếu fail, return empty để handle ở ngoài
+      return outputs
+    }
 
-    await execAsync(`whisper "${filePath}" --model small --output_dir "${outputDir}" ${formatFlags}`)
-
-    console.log("[v0] Whisper conversion completed, reading output files")
-
-    // Read the generated files
+    // Đọc chỉ những files tương ứng với formats người dùng chọn
     for (const format of formats) {
-      const fileName = `output.${format}`
-      const filePath = path.join(outputDir, fileName)
+      const outputFilePath = path.join(outputDir, `${baseName}.${format}`)
       try {
-        const content = await fs.readFile(filePath, "utf-8")
+        const content = await fs.readFile(outputFilePath, "utf-8")
         outputs[format] = content
-        console.log("[v0] Read format:", format, "- size:", content.length)
-      } catch (err) {
-        console.log("[v0] File not generated for format:", format)
-        // File might not have been generated
+        console.log(`[v0] Read selected ${format}: ${content.length} characters`)
+      } catch (readErr) {
+        console.log(`[v0] Selected format ${format} not generated or error: ${readErr}`)
+        // Không throw, vì có thể format không hỗ trợ (nhưng với default, tất cả đều có)
       }
     }
 
+    console.log("[v0] Whisper single run completed, selected outputs:", Object.keys(outputs))
     return outputs
   } finally {
     // Cleanup temp directory

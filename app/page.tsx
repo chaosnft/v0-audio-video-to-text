@@ -1,3 +1,4 @@
+// v0-audio-video-to-text\app\page.tsx
 "use client"
 
 import { useState } from "react"
@@ -5,19 +6,26 @@ import UploadZone from "@/components/upload-zone"
 import ConversionResults from "@/components/conversion-results"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
-import SetupModal from "@/components/setup-modal"
+import GuideModal from "@/components/guide-modal" 
+import ProgressModal from "@/components/progress-modal"
 import { Card } from "@/components/ui/card"
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null)
+  const [fileDuration, setFileDuration] = useState<number | null>(null)  // Thêm state duration
   const [selectedFormats, setSelectedFormats] = useState<string[]>(["txt"])
   const [isProcessing, setIsProcessing] = useState(false)
   const [results, setResults] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
-  const [showSetup, setShowSetup] = useState(false)
+  const [showGuide, setShowGuide] = useState(false)  // Đổi từ showSetup
 
-  const handleFileSelect = (selectedFile: File) => {
+  const handleFileSelect = (selectedFile: File, duration?: number) => {  // Nhận duration từ child
+    if (duration && duration > 300) {
+      alert(`File exceeds 5-minute limit (${Math.round(duration)} seconds). Please choose a shorter file.`)
+      return
+    }
     setFile(selectedFile)
+    setFileDuration(duration || null)
     setError(null)
   }
 
@@ -53,20 +61,24 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-black text-white flex flex-col">
-      <Header onSetupClick={() => setShowSetup(true)} />
+      <Header onGuideClick={() => setShowGuide(true)} />  {/* Đổi prop */}
 
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-4xl">
           {!results ? (
             <div className="space-y-6">
-              {/* Upload Zone */}
-              <UploadZone onFileSelect={handleFileSelect} selectedFile={file} />
+              {/* Upload Zone - Pass handleFileSelect với duration */}
+              <UploadZone 
+                onFileSelect={handleFileSelect} 
+                selectedFile={file}
+                duration={fileDuration}  // Để hiển thị nếu cần
+              />
 
-              {/* Format Selection */}
+              {/* Format Selection - Chỉnh grid và size button */}
               <Card className="bg-white/5 border-white/10 p-6">
                 <h2 className="text-lg font-semibold text-white mb-4">Output Formats</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-5 gap-2">  {/* 5 cols ngang */}
                   {["txt", "srt", "vtt", "tsv", "json"].map((format) => (
                     <button
                       key={format}
@@ -75,7 +87,7 @@ export default function Home() {
                           prev.includes(format) ? prev.filter((f) => f !== format) : [...prev, format],
                         )
                       }}
-                      className={`px-4 py-3 rounded-lg font-medium transition-all ${
+                      className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${  // Nhỏ hơn
                         selectedFormats.includes(format)
                           ? "bg-white text-black"
                           : "bg-white/10 text-white hover:bg-white/20"
@@ -108,7 +120,8 @@ export default function Home() {
       </div>
 
       <Footer />
-      <SetupModal isOpen={showSetup} onClose={() => setShowSetup(false)} />
+      <GuideModal isOpen={showGuide} onClose={() => setShowGuide(false)} />
+      <ProgressModal isOpen={isProcessing} onClose={() => {}} /> 
     </main>
   )
 }
