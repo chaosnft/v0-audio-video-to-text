@@ -1,4 +1,4 @@
-# Dockerfile (đã fix hoàn chỉnh – dùng được trên Render ngay)
+# Dockerfile – bản cuối cùng, chạy ngon trên Render ngay
 FROM node:20-bookworm
 
 # Cài FFmpeg + Python + pip
@@ -9,29 +9,29 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
-# Cài Whisper (bắt buộc --break-system-packages trên Debian 12+)
+# Cài Whisper
 RUN pip3 install --upgrade pip --break-system-packages && \
     pip3 install -U openai-whisper --break-system-packages
 
-# Tạo folder app
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-
-# Cài TẤT CẢ dependencies (cả devDependencies để build được)
-RUN npm ci
+RUN npm ci   # Cài cả devDependencies để build
 
 # Copy source code
 COPY . .
 
-# Build Next.js (bắt buộc có devDependencies)
+# QUAN TRỌNG: Generate Prisma Client trước khi build Next.js
+RUN npx prisma generate
+
+# Build Next.js
 RUN npm run build
 
-# Sau khi build xong thì xóa devDependencies để image nhẹ hơn (tùy chọn nhưng rất tốt)
+# (Tùy chọn) Xóa devDependencies sau khi build xong để image nhẹ
 RUN npm prune --production
 
-# Env cần thiết
+# Env
 ENV NODE_ENV=production
 ENV PYTHONIOENCODING=utf-8
 ENV PORT=3000
