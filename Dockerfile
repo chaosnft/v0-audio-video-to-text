@@ -1,5 +1,7 @@
 # Dockerfile (tại root)
-FROM node:20-bookworm  # Node 20 + Debian (cho Python install)
+
+# Node 20 + Debian (cho Python install)
+FROM node:20-bookworm
 
 # Install system deps: FFmpeg, Python 3.10+, pip
 RUN apt-get update && apt-get install -y \
