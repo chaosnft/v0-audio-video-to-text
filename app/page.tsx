@@ -1,0 +1,114 @@
+"use client"
+
+import { useState } from "react"
+import UploadZone from "@/components/upload-zone"
+import ConversionResults from "@/components/conversion-results"
+import Header from "@/components/header"
+import Footer from "@/components/footer"
+import SetupModal from "@/components/setup-modal"
+import { Card } from "@/components/ui/card"
+
+export default function Home() {
+  const [file, setFile] = useState<File | null>(null)
+  const [selectedFormats, setSelectedFormats] = useState<string[]>(["txt"])
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [results, setResults] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [showSetup, setShowSetup] = useState(false)
+
+  const handleFileSelect = (selectedFile: File) => {
+    setFile(selectedFile)
+    setError(null)
+  }
+
+  const handleConvert = async () => {
+    if (!file) return
+
+    setIsProcessing(true)
+    setError(null)
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("formats", JSON.stringify(selectedFormats))
+
+      const response = await fetch("/api/convert", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Conversion failed")
+      }
+
+      const data = await response.json()
+      setResults(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-black text-white flex flex-col">
+      <Header onSetupClick={() => setShowSetup(true)} />
+
+      {/* Main Content */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-4xl">
+          {!results ? (
+            <div className="space-y-6">
+              {/* Upload Zone */}
+              <UploadZone onFileSelect={handleFileSelect} selectedFile={file} />
+
+              {/* Format Selection */}
+              <Card className="bg-white/5 border-white/10 p-6">
+                <h2 className="text-lg font-semibold text-white mb-4">Output Formats</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {["txt", "srt", "vtt", "tsv", "json"].map((format) => (
+                    <button
+                      key={format}
+                      onClick={() => {
+                        setSelectedFormats((prev) =>
+                          prev.includes(format) ? prev.filter((f) => f !== format) : [...prev, format],
+                        )
+                      }}
+                      className={`px-4 py-3 rounded-lg font-medium transition-all ${
+                        selectedFormats.includes(format)
+                          ? "bg-white text-black"
+                          : "bg-white/10 text-white hover:bg-white/20"
+                      }`}
+                    >
+                      .{format.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </Card>
+
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-900/20 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg">{error}</div>
+              )}
+
+              {/* Convert Button */}
+              <button
+                onClick={handleConvert}
+                disabled={!file || isProcessing || selectedFormats.length === 0}
+                className="w-full bg-white text-black py-3 px-6 rounded-lg font-semibold hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {isProcessing ? "Converting..." : "Convert to Text"}
+              </button>
+            </div>
+          ) : (
+            <ConversionResults results={results} onStartOver={() => setResults(null)} />
+          )}
+        </div>
+      </div>
+
+      <Footer />
+      <SetupModal isOpen={showSetup} onClose={() => setShowSetup(false)} />
+    </main>
+  )
+}
