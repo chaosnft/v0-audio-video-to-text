@@ -80,31 +80,31 @@ export default function ProgressModal({ isOpen }: ProgressModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white/5 border border-white/10 rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
-        {/* Header with Shimmer Effect */}
+      <div className="bg-white/5 border border-white/10 rounded-xl w-full max-w-md min-h-[40vh] max-h-[80vh] overflow-hidden flex flex-col">
+        {/* Header with Shimmer Effect - Mở rộng shimmer ra toàn bộ khung header */}
         <div className="sticky top-0 bg-white/5 border-b border-white/10 px-6 py-4 flex items-center justify-between relative overflow-hidden">
-          <div className="relative">
+          <div className="relative z-10">
             <h2 className="text-xl font-bold text-white">Processing</h2>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-75">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer-slow" />
-            </div>
           </div>
-          <button className="text-white/60 hover:text-white transition-colors" disabled>
+          <button className="text-white/60 hover:text-white transition-colors relative z-10" disabled>
             <X className="w-6 h-6" />
           </button>
+          {/* Shimmer effect lan ra toàn bộ khung */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-75 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer-slow w-[200%] h-full" />
+          </div>
         </div>
 
-        {/* Progress Steps List - Smooth slide in */}
+        {/* Progress Steps List - Cải thiện animation: fade-in + slide-up staggered, như chat AI */}
         <div ref={containerRef} className="p-6 space-y-4 flex flex-col overflow-y-auto">
           {progressSteps.slice(0, currentStep + 1).map((step, idx) => (
             <div
               key={idx}
-              className={`flex items-start gap-3 transform transition-all duration-500 ease-out ${
-                idx === currentStep
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-100 translate-y-0 delay-${idx * 100}ms"
+              className={`flex items-start gap-3 transform transition-all duration-500 ease-out opacity-0 translate-y-4 ${
+                idx <= currentStep ? "opacity-100 translate-y-0" : ""
               }`}
               style={{
+                animation: `fadeSlideUp 0.5s ease-out forwards`,
                 animationDelay: `${idx * 200}ms`, // Staggered entrance
               }}
             >
@@ -137,6 +137,16 @@ export default function ProgressModal({ isOpen }: ProgressModalProps) {
         }
         .animate-blink {
           animation: blink 1s infinite;
+        }
+        @keyframes fadeSlideUp {
+          from {
+            opacity: 0;
+            transform: translateY(1rem);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
         .typing-text {
           overflow: hidden;

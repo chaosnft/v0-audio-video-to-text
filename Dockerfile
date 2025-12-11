@@ -1,17 +1,17 @@
-# Dockerfile – bản cuối cùng, chạy ngon trên Render ngay
 FROM node:20-bookworm
 
-# Cài FFmpeg + Python + pip
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     python3 \
     python3-pip \
     python3-venv \
-    && rm -rf /var/lib/apt/lists/*
+    libopenblas0 \  # Tối ưu BLAS cho numpy/scipy trong whisper-ctranslate2 && rm -rf /var/lib/apt/lists/*
 
-# Cài Whisper
-RUN pip3 install --upgrade pip --break-system-packages && \
-    pip3 install -U openai-whisper --break-system-packages
+RUN python3 -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
+
+RUN pip install --upgrade pip --no-cache-dir && \
+    pip install -U openai-whisper whisper-ctranslate2 --no-cache-dir
 
 WORKDIR /app
 
@@ -22,13 +22,11 @@ RUN npm ci   # Cài cả devDependencies để build
 # Copy source code
 COPY . .
 
-# QUAN TRỌNG: Generate Prisma Client trước khi build Next.js
 RUN npx prisma generate
 
 # Build Next.js
 RUN npm run build
 
-# (Tùy chọn) Xóa devDependencies sau khi build xong để image nhẹ
 RUN npm prune --production
 
 # Env

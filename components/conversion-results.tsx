@@ -1,3 +1,4 @@
+// v0-audio-video-to-text\components\conversion-results.tsx
 "use client"
 
 import { Download, ArrowLeft } from "lucide-react"
@@ -33,11 +34,12 @@ export default function ConversionResults({ results, onStartOver }: ConversionRe
         <h2 className="text-2xl font-bold text-white mb-4">Conversion Complete</h2>
         <p className="text-white/60 mb-6">Your files are ready to download</p>
 
-        <div className="space-y-3">
+        {/* Sắp xếp theo grid ngang, responsive, max 5 cột */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {Object.entries(results.outputs || {}).map(([format, content]) => (
             <Card
               key={format}
-              className="bg-white/5 border-white/10 p-4 flex items-center justify-between hover:bg-white/10 transition-all"
+              className="bg-white/5 border-white/10 p-4 flex flex-col justify-between hover:bg-white/10 transition-all"
             >
               <div>
                 <p className="font-semibold text-white">{format.toUpperCase()} File</p>
@@ -47,7 +49,7 @@ export default function ConversionResults({ results, onStartOver }: ConversionRe
               </div>
               <button
                 onClick={() => handleDownload(`output.${format}`, content as string)}
-                className="flex items-center gap-2 bg-white text-black px-4 py-2 rounded-lg font-medium hover:bg-white/90 transition-all"
+                className="flex items-center justify-center gap-2 bg-white text-black px-4 py-2 rounded-lg font-medium hover:bg-white/90 transition-all mt-4"
               >
                 <Download className="w-4 h-4" />
                 Download
