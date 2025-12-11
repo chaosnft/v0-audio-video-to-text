@@ -1,3 +1,5 @@
+# Dockerfile – bản chỉnh sửa cho Railway, hỗ trợ whisper-ctranslate2
+# Tối ưu BLAS cho numpy/scipy trong whisper-ctranslate2 bằng libopenblas0-pthread
 FROM node:20-bookworm
 
 RUN apt-get update && apt-get install -y \
@@ -5,7 +7,8 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     python3-venv \
-    libopenblas0 \  # Tối ưu BLAS cho numpy/scipy trong whisper-ctranslate2 && rm -rf /var/lib/apt/lists/*
+    libopenblas0-pthread \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m venv /app/venv
 ENV PATH="/app/venv/bin:$PATH"
