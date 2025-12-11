@@ -38,8 +38,7 @@ async function convertWithWhisper(filePath: string, formats: string[]): Promise<
   try {
     console.log("[v0] Starting Whisper conversion (single run for all formats, filtering selected)")
 
-    // Chạy Whisper một lần duy nhất, KHÔNG có --output_format → generate tất cả: txt, srt, vtt, tsv, json
-    const command = `whisper "${filePath}" --model small --output_dir "${outputDir}" --fp16 False`  // Thêm --language vi cho tiếng Việt (tùy chọn, nhanh hơn)
+    const command = `whisper "${filePath}" --model small --output_dir "${outputDir}" --fp16 False` 
     
     try {
       const { stdout, stderr } = await execAsync(command, execOptions)
@@ -54,7 +53,6 @@ async function convertWithWhisper(filePath: string, formats: string[]): Promise<
       return outputs
     }
 
-    // Đọc chỉ những files tương ứng với formats người dùng chọn
     for (const format of formats) {
       const outputFilePath = path.join(outputDir, `${baseName}.${format}`)
       try {
@@ -63,7 +61,6 @@ async function convertWithWhisper(filePath: string, formats: string[]): Promise<
         console.log(`[v0] Read selected ${format}: ${content.length} characters`)
       } catch (readErr) {
         console.log(`[v0] Selected format ${format} not generated or error: ${readErr}`)
-        // Không throw, vì có thể format không hỗ trợ (nhưng với default, tất cả đều có)
       }
     }
 

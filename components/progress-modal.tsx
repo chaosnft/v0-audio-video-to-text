@@ -6,15 +6,15 @@ import { X } from "lucide-react"
 
 interface ProgressModalProps {
   isOpen: boolean
-  onClose: () => void  // Không dùng vì đang processing
+  onClose: () => void 
 }
 
 const progressSteps = [
   "Uploading and validating file...",
   "Analyzing duration and extracting audio...",
-  "Detecting language (Vietnamese detected)...",
+  "Detecting language ...",
   "Transcribing with Whisper AI...",
-  "Generating selected formats (TXT, SRT, etc.)...",
+  "Generating selected formats...",
   "Finalizing outputs..."
 ]
 

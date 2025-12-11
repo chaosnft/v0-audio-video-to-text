@@ -3,16 +3,17 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import Google from "next-auth/providers/google"
 import { PrismaAdapter } from "@auth/prisma-adapter"
-import { PrismaClient } from "@prisma/client"  // Standard import (v5 style, no custom path)
+import { PrismaClient } from "@prisma/client"
 
-// Singleton pattern (tránh multiple connections)
+// Singleton pattern (multiple connections)
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 const prisma = globalForPrisma.prisma || new PrismaClient()
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),  // Tự động tạo/update user cho OAuth
+  adapter: PrismaAdapter(prisma),
+  trustHost: true,
   providers: [
     Credentials({
       name: "Credentials",
@@ -21,7 +22,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // TODO: Real auth từ Prisma (findUnique + bcrypt)
         if (credentials?.email === "demo@example.com" && credentials?.password === "password") {
           return { id: "1", name: "Demo User", email: "demo@example.com" }
         }
@@ -31,7 +31,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      allowDangerousEmailAccountLinking: true,  // Thêm để cho phép link nếu email trùng
+      allowDangerousEmailAccountLinking: true,
     }),
   ],
   pages: {
@@ -40,12 +40,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Xử lý link account nếu user tồn tại với email trùng
       if (account?.provider === "google" && user.email) {
         try {
           const existingUser = await prisma.user.findUnique({ where: { email: user.email } })
           if (existingUser) {
-            // Link account nếu chưa có
             const existingAccount = await prisma.account.findFirst({
               where: { userId: existingUser.id, provider: "google" },
             })
@@ -66,9 +64,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 },
               })
             }
-            return true  // Cho phép signIn
+            return true 
           } else {
-            // Tạo user mới nếu chưa tồn tại
             await prisma.user.create({
               data: {
                 email: user.email,
